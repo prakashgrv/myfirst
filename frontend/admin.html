@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CollegeGuide AI — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:    #4f46e5;
+      --primary-dk: #3730a3;
+      --success:    #10b981;
+      --danger:     #ef4444;
+      --bg:         #f8f9ff;
+      --surface:    #ffffff;
+      --border:     #e2e4ef;
+      --text:       #1e1b4b;
+      --muted:      #6b7280;
+      --radius:     12px;
+      --shadow:     0 2px 12px rgba(79,70,229,.12);
+    }
+    html, body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      padding: 14px 24px; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+    }
+    .logo { width:38px; height:38px; border-radius:10px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .brand h1 { font-size:17px; font-weight:700; }
+    .brand p  { font-size:12px; color:var(--muted); }
+    .back-link {
+      margin-left:auto; font-size:13px; color:var(--primary); text-decoration:none;
+      border:1px solid var(--primary); border-radius:8px; padding:5px 12px;
+      transition:background .15s;
+    }
+    .back-link:hover { background:#ede9fe; }
+
+    /* ── Main layout ── */
+    main { max-width: 960px; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 28px; }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-body { padding: 20px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+    .tab {
+      padding: 10px 18px; font-size: 14px; font-weight: 500; cursor: pointer;
+      border: none; background: none; color: var(--muted);
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab:hover:not(.active) { color: var(--text); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Form elements ── */
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; color: var(--text);
+      outline: none; transition: border-color .2s;
+      background: var(--bg);
+    }
+    input:focus, textarea:focus { border-color: var(--primary); background: #fff; }
+    textarea { resize: vertical; min-height: 120px; }
+    .field { margin-bottom: 14px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 8px; border: none;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: background .15s, opacity .15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dk); }
+    .btn-primary:disabled { opacity: .4; cursor: default; }
+    .btn-danger  { background: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-mic {
+      background: var(--bg); border: 1.5px solid var(--border); color: var(--muted);
+      transition: all .15s;
+    }
+    .btn-mic:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-mic.active { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 500;
+      color: #fff; opacity: 0; transform: translateY(10px);
+      transition: opacity .3s, transform .3s; pointer-events: none; z-index: 99;
+      max-width: 320px;
+    }
+    #toast.show { opacity: 1; transform: none; }
+    #toast.success { background: var(--success); }
+    #toast.error   { background: var(--danger); }
+
+    /* ── Knowledge table ── */
+    .kb-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+    .kb-search { flex: 1; max-width: 260px; }
+    .kb-count  { font-size: 13px; color: var(--muted); }
+    .kb-list { display: flex; flex-direction: column; gap: 10px; }
+    .kb-item {
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+      transition: border-color .15s;
+    }
+    .kb-item:hover { border-color: #c7d2fe; }
+    .kb-icon { font-size: 24px; flex-shrink: 0; }
+    .kb-info { flex: 1; min-width: 0; }
+    .kb-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kb-meta  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; margin-right: 4px;
+      text-transform: uppercase;
+    }
+    .badge-text    { background: #dbeafe; color: #1d4ed8; }
+    .badge-url     { background: #dcfce7; color: #15803d; }
+    .badge-youtube { background: #fee2e2; color: #b91c1c; }
+    .badge-speech  { background: #fef9c3; color: #854d0e; }
+    .kb-actions { flex-shrink: 0; display: flex; gap: 6px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-state .icon { font-size: 40px; display: block; margin-bottom: 10px; }
+    .loading-spinner { text-align: center; padding: 30px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎓</div>
+  <div class="brand">
+    <h1>Admin Panel</h1>
+    <p>Manage knowledge base &amp; sources</p>
+  </div>
+  <a class="back-link" href="/index.html">💬 Chat</a>
+</header>
+
+<main>
+
+  <!-- ── Ingest Knowledge ──────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">📥 Add Knowledge</div>
+    <div class="card-body">
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('text')">📝 Text</button>
+        <button class="tab" onclick="switchTab('url')">🌐 URL / Coda</button>
+        <button class="tab" onclick="switchTab('youtube')">▶ YouTube</button>
+        <button class="tab" onclick="switchTab('speech')">🎤 Speech</button>
+      </div>
+
+      <!-- Text -->
+      <div class="tab-panel active" id="panel-text">
+        <div class="field">
+          <label for="txt-title">Title *</label>
+          <input type="text" id="txt-title" placeholder="e.g., Harvard Admissions Overview" />
+        </div>
+        <div class="field">
+          <label for="txt-content">Content *</label>
+          <textarea id="txt-content" placeholder="Paste or type the knowledge content here…"></textarea>
+        </div>
+        <div class="field">
+          <label for="txt-tags">Tags (optional)</label>
+          <input type="text" id="txt-tags" placeholder="e.g., harvard, ivy league, admissions" />
+          <p class="hint">Comma-separated tags to help categorise this entry.</p>
+        </div>
+        <button class="btn btn-primary" onclick="submitText()" id="txtBtn">💾 Save Knowledge</button>
+      </div>
+
+      <!-- URL -->
+      <div class="tab-panel" id="panel-url">
+        <div class="field">
+          <label for="url-input">Page URL *</label>
+          <input type="url" id="url-input" placeholder="https://coda.io/… or any public page" />
+          <p class="hint">The page will be fetched and its text extracted automatically. Works with Coda, Notion (public), College Board, CommonApp, and most websites.</p>
+        </div>
+        <div class="field">
+          <label for="url-tags">Tags (optional)</label>
+          <input type="text" id="url-tags" placeholder="e.g., scholarships, financial-aid" />
+        </div>
+        <button class="btn btn-primary" onclick="submitUrl()" id="urlBtn">🌐 Fetch &amp; Save</button>
+      </div>
+
+      <!-- YouTube -->
+      <div class="tab-panel" id="panel-youtube">
+        <div class="field">
+          <label for="yt-url">YouTube Video URL *</label>
+          <input type="url" id="yt-url" placeholder="https://www.youtube.com/watch?v=…" />
+          <p class="hint">We'll extract the video's transcript automatically. The video must have captions available.</p>
+        </div>
+        <div class="field">
+          <label for="yt-tags">Tags (optional)</label>
+          <input type="text" id="yt-tags" placeholder="e.g., essays, interviews" />
+        </div>
+        <button class="btn btn-primary" onclick="submitYoutube()" id="ytBtn">▶ Extract &amp; Save</button>
+      </div>
+
+      <!-- Speech -->
+      <div class="tab-panel" id="panel-speech">
+        <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">
+          Dictate knowledge directly. Click the microphone, speak, then save the transcribed text.
+        </p>
+        <div class="field">
+          <label>Microphone</label>
+          <button class="btn btn-mic" id="speechMicBtn" onclick="toggleSpeechMic()">🎤 Start Recording</button>
+          <p class="hint" id="speechStatus">Ready — click to start recording.</p>
+        </div>
+        <div class="field">
+          <label for="speech-title">Title *</label>
+          <input type="text" id="speech-title" placeholder="e.g., Notes on UC System Requirements" />
+        </div>
+        <div class="field">
+          <label for="speech-content">Transcription</label>
+          <textarea id="speech-content" placeholder="Transcription will appear here — you can also edit it manually…"></textarea>
+        </div>
+        <div class="field">
+          <label for="speech-tags">Tags (optional)</label>
+          <input type="text" id="speech-tags" placeholder="e.g., uc, california" />
+        </div>
+        <button class="btn btn-primary" onclick="submitSpeech()" id="speechBtn">💾 Save Transcription</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Knowledge Base ────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">📚 Knowledge Base</div>
+    <div class="card-body">
+      <div class="kb-toolbar">
+        <input type="text" class="kb-search" id="kbSearch" placeholder="Filter entries…" oninput="filterKb()" />
+        <span class="kb-count" id="kbCount"></span>
+        <button class="btn btn-primary btn-sm" onclick="loadKnowledge()">↺ Refresh</button>
+      </div>
+      <div id="kb-list" class="kb-list">
+        <div class="loading-spinner">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  /* ── Tabs ───────────────────────────────────────────── */
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const n = ['text','url','youtube','speech'][i];
+      t.classList.toggle('active', n === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === `panel-${name}`);
+    });
+  }
+
+  /* ── Toast ──────────────────────────────────────────── */
+  function showToast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  /* ── API helpers ────────────────────────────────────── */
+  async function api(path, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.detail || 'Request failed');
+    return json;
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    if (loading) btn.dataset.orig = btn.innerHTML;
+    btn.innerHTML = loading
+      ? '<span style="display:inline-flex;gap:4px"><span class="dot-pulse" style="display:flex;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.2s .2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1.2s .4s infinite"></span></span></span>'
+      : (btn.dataset.orig || btn.textContent);
+  }
+
+  /* ── Text ingestion ─────────────────────────────────── */
+  async function submitText() {
+    const title   = document.getElementById('txt-title').value.trim();
+    const content = document.getElementById('txt-content').value.trim();
+    const tags    = document.getElementById('txt-tags').value.trim();
+    if (!title || !content) return showToast('Title and content are required.', 'error');
+    setLoading('txtBtn', true);
+    try {
+      await api('/api/admin/knowledge/text', 'POST', { title, content, tags });
+      showToast('✅ Knowledge saved!');
+      document.getElementById('txt-title').value = '';
+      document.getElementById('txt-content').value = '';
+      document.getElementById('txt-tags').value = '';
+      loadKnowledge();
+    } catch (e) { showToast('❌ ' + e.message, 'error'); }
+    finally { setLoading('txtBtn', false); }
+  }
+
+  /* ── URL ingestion ──────────────────────────────────── */
+  async function submitUrl() {
+    const url  = document.getElementById('url-input').value.trim();
+    const tags = document.getElementById('url-tags').value.trim();
+    if (!url) return showToast('Please enter a URL.', 'error');
+    setLoading('urlBtn', true);
+    try {
+      const res = await api('/api/admin/knowledge/url', 'POST', { url, tags });
+      showToast(`✅ Saved: ${res.title}`);
+      document.getElementById('url-input').value = '';
+      document.getElementById('url-tags').value = '';
+      loadKnowledge();
+    } catch (e) { showToast('❌ ' + e.message, 'error'); }
+    finally { setLoading('urlBtn', false); }
+  }
+
+  /* ── YouTube ingestion ──────────────────────────────── */
+  async function submitYoutube() {
+    const url  = document.getElementById('yt-url').value.trim();
+    const tags = document.getElementById('yt-tags').value.trim();
+    if (!url) return showToast('Please enter a YouTube URL.', 'error');
+    setLoading('ytBtn', true);
+    try {
+      const res = await api('/api/admin/knowledge/youtube', 'POST', { url, tags });
+      showToast(`✅ Transcript saved: ${res.title}`);
+      document.getElementById('yt-url').value = '';
+      document.getElementById('yt-tags').value = '';
+      loadKnowledge();
+    } catch (e) { showToast('❌ ' + e.message, 'error'); }
+    finally { setLoading('ytBtn', false); }
+  }
+
+  /* ── Speech ingestion ───────────────────────────────── */
+  let speechRec = null;
+  let speechListening = false;
+
+  function toggleSpeechMic() {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      return showToast('Voice input not supported in this browser. Try Chrome.', 'error');
+    }
+    if (speechListening) {
+      speechRec && speechRec.stop();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    speechRec = new SR();
+    speechRec.continuous = true;
+    speechRec.interimResults = true;
+    speechRec.lang = 'en-US';
+
+    const btn = document.getElementById('speechMicBtn');
+    const status = document.getElementById('speechStatus');
+
+    speechRec.onstart = () => {
+      speechListening = true;
+      btn.classList.add('active');
+      btn.textContent = '⏹ Stop Recording';
+      status.textContent = '🔴 Recording… speak now.';
+    };
+    speechRec.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ');
+      document.getElementById('speech-content').value = transcript;
+    };
+    speechRec.onend = () => {
+      speechListening = false;
+      btn.classList.remove('active');
+      btn.textContent = '🎤 Start Recording';
+      status.textContent = 'Recording stopped. Review and save.';
+    };
+    speechRec.onerror = (e) => {
+      speechListening = false;
+      btn.classList.remove('active');
+      btn.textContent = '🎤 Start Recording';
+      status.textContent = `Error: ${e.error}`;
+    };
+    speechRec.start();
+  }
+
+  async function submitSpeech() {
+    const title   = document.getElementById('speech-title').value.trim();
+    const content = document.getElementById('speech-content').value.trim();
+    const tags    = document.getElementById('speech-tags').value.trim();
+    if (!title || !content) return showToast('Title and transcription are required.', 'error');
+    setLoading('speechBtn', true);
+    try {
+      await api('/api/admin/knowledge/text', 'POST', { title, content, tags: tags || 'speech' });
+      showToast('✅ Speech note saved!');
+      document.getElementById('speech-title').value = '';
+      document.getElementById('speech-content').value = '';
+      document.getElementById('speech-tags').value = '';
+      document.getElementById('speechStatus').textContent = 'Ready — click to start recording.';
+      loadKnowledge();
+    } catch (e) { showToast('❌ ' + e.message, 'error'); }
+    finally { setLoading('speechBtn', false); }
+  }
+
+  /* ── Knowledge base list ────────────────────────────── */
+  let allKnowledge = [];
+
+  const ICONS = { text: '📝', url: '🌐', youtube: '▶', speech: '🎤' };
+  const BADGES = { text: 'badge-text', url: 'badge-url', youtube: 'badge-youtube', speech: 'badge-speech' };
+
+  function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    return (n / 1024).toFixed(1) + ' KB';
+  }
+  function formatDate(s) {
+    return new Date(s + 'Z').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+
+  function renderKb(items) {
+    const el = document.getElementById('kb-list');
+    document.getElementById('kbCount').textContent = `${items.length} entr${items.length === 1 ? 'y' : 'ies'}`;
+
+    if (items.length === 0) {
+      el.innerHTML = `<div class="empty-state"><span class="icon">📭</span>No knowledge entries yet.<br>Add some using the form above.</div>`;
+      return;
+    }
+
+    el.innerHTML = items.map(item => `
+      <div class="kb-item" id="kb-${item.id}">
+        <div class="kb-icon">${ICONS[item.source_type] || '📄'}</div>
+        <div class="kb-info">
+          <div class="kb-title" title="${escHtml(item.title)}">${escHtml(item.title)}</div>
+          <div class="kb-meta">
+            <span class="badge ${BADGES[item.source_type] || ''}">${item.source_type}</span>
+            ${item.tags ? `<span style="color:var(--muted)">${escHtml(item.tags)}</span> · ` : ''}
+            ${formatBytes(item.content_length)} · ${formatDate(item.created_at)}
+            ${item.source_url ? `· <a href="${escHtml(item.source_url)}" target="_blank" style="color:var(--primary)">source ↗</a>` : ''}
+          </div>
+        </div>
+        <div class="kb-actions">
+          <button class="btn btn-danger btn-sm" onclick="deleteKnowledge(${item.id}, '${escHtml(item.title).replace(/'/g,"\\'")}')">🗑</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterKb() {
+    const q = document.getElementById('kbSearch').value.toLowerCase();
+    const filtered = q
+      ? allKnowledge.filter(i => i.title.toLowerCase().includes(q) || (i.tags||'').toLowerCase().includes(q) || i.source_type.includes(q))
+      : allKnowledge;
+    renderKb(filtered);
+  }
+
+  async function loadKnowledge() {
+    const el = document.getElementById('kb-list');
+    el.innerHTML = '<div class="loading-spinner">Loading…</div>';
+    try {
+      allKnowledge = await api('/api/admin/knowledge');
+      filterKb();
+    } catch (e) {
+      el.innerHTML = `<div class="empty-state"><span class="icon">⚠️</span>${e.message}</div>`;
+    }
+  }
+
+  async function deleteKnowledge(id, title) {
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await api(`/api/admin/knowledge/${id}`, 'DELETE');
+      showToast('🗑 Entry deleted.');
+      loadKnowledge();
+    } catch (e) { showToast('❌ ' + e.message, 'error'); }
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Init ─────────────────────────────────────────────── */
+  loadKnowledge();
+</script>
+</body>
+</html>
