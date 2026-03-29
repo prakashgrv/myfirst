@@ -1,0 +1,14 @@
+Subject: Your application was not approved
+
+Hi [Applicant Name],
+
+Thank you for your interest in our investor program and for taking the time to submit your application on September 2, 2023.
+
+After careful review, we are unable to approve your Investor Application at this time.
+
+If your startup or investing experience has meaningfully changed since you last applied, or if you have additional information you'd like us to consider, please don't hesitate to reach out to us directly.
+
+We appreciate your interest and wish you the best in your endeavors.
+
+Best regards,
+[Your Name / Team Name]
